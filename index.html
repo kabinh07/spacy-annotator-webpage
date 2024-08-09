@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Annotation Tool</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .annotate-section {
+            margin-bottom: 20px;
+        }
+        .input-field {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+        }
+        .btn {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background-color: #45a049;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Data Annotation Tool</h2>
+
+<input type="file" id="fileInput" class="btn" accept=".json">
+<div id="annotation-container" class="hidden"></div>
+
+<button id="saveButton" class="btn hidden" onclick="saveAnnotations()">Save Annotations</button>
+<a id="downloadLink" class="hidden"></a>
+
+<script>
+    let dataframe = [];
+    let currentIndex = 0;
+    let annotations = [];
+
+    document.getElementById('fileInput').addEventListener('change', loadFile);
+
+    function loadFile(event) {
+        const file = event.target.files[0];
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            dataframe = JSON.parse(e.target.result);
+            document.getElementById('annotation-container').classList.remove('hidden');
+            document.getElementById('saveButton').classList.remove('hidden');
+            loadSentence(currentIndex);
+        };
+        reader.readAsText(file);
+    }
+
+    function loadSentence(index) {
+        const data = dataframe[index];
+        let container = document.getElementById('annotation-container');
+        container.innerHTML = `
+            <div class="annotate-section">
+                <strong>Sentence:</strong> ${data.sentence}
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Word</th>
+                        <th>LEMMA (Predicted)</th>
+                        <th>LEMMA (Corrected)</th>
+                        <th>POS</th>
+                        <th>NER</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${data.words.map((word, i) => `
+                        <tr>
+                            <td>${word}</td>
+                            <td>${data.lemmas[i]}</td>
+                            <td><input type="text" class="input-field" id="lemma-${i}" value="${data.lemmas[i]}"></td>
+                            <td><input type="text" class="input-field" id="pos-${i}"></td>
+                            <td><input type="text" class="input-field" id="ner-${i}"></td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+            <button class="btn" onclick="saveCurrentAnnotation()">Next</button>
+        `;
+    }
+
+    function saveCurrentAnnotation() {
+        const data = dataframe[currentIndex];
+        const annotation = {
+            "sentence": data.sentence,
+            "words": data.words,
+            "lemmas": data.words.map((word, i) => document.getElementById(`lemma-${i}`).value),
+            "pos": data.words.map((word, i) => document.getElementById(`pos-${i}`).value),
+            "ner": data.words.map((word, i) => document.getElementById(`ner-${i}`).value)
+        };
+        annotations.push(annotation);
+        currentIndex++;
+        if (currentIndex < dataframe.length) {
+            loadSentence(currentIndex);
+        } else {
+            alert('Annotation completed.');
+            document.getElementById('annotation-container').innerHTML = '';
+        }
+    }
+
+    function saveAnnotations() {
+        const jsonContent = JSON.stringify(annotations, null, 2);
+        const blob = new Blob([jsonContent], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const downloadLink = document.getElementById('downloadLink');
+        downloadLink.href = url;
+        downloadLink.download = 'annotated_data.json';
+        downloadLink.click();
+    }
+</script>
+
+</body>
+</html>
