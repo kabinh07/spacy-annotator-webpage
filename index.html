@@ -87,7 +87,6 @@
                 <thead>
                     <tr>
                         <th>Word</th>
-                        <th>LEMMA (Predicted)</th>
                         <th>LEMMA (Corrected)</th>
                         <th>POS</th>
                         <th>NER</th>
@@ -97,10 +96,9 @@
                     ${data.words.map((word, i) => `
                         <tr>
                             <td>${word}</td>
-                            <td>${data.lemmas[i]}</td>
                             <td><input type="text" class="input-field" id="lemma-${i}" value="${data.lemmas[i]}"></td>
-                            <td><input type="text" class="input-field" id="pos-${i}"></td>
-                            <td><input type="text" class="input-field" id="ner-${i}"></td>
+                            <td><input type="text" class="input-field" id="pos-${i}" value="${data.postags[i]}"></td>
+                            <td><input type="text" class="input-field" id="ner-${i}" value="${data.nertags[i]}"></td>
                         </tr>
                     `).join('')}
                 </tbody>
