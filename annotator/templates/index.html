@@ -51,30 +51,23 @@
 
 <h2>Data Annotation Tool</h2>
 
-<input type="file" id="fileInput" class="btn" accept=".json">
-<div id="annotation-container" class="hidden"></div>
+<div id="annotation-container"></div>
 
-<button id="saveButton" class="btn hidden" onclick="saveAnnotations()">Save Annotations</button>
-<a id="downloadLink" class="hidden"></a>
+<button id="saveButton" class="btn" onclick="saveAnnotations()">Save Annotations</button>
 
 <script>
     let dataframe = [];
     let currentIndex = 0;
     let annotations = [];
 
-    document.getElementById('fileInput').addEventListener('change', loadFile);
-
-    function loadFile(event) {
-        const file = event.target.files[0];
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            dataframe = JSON.parse(e.target.result);
-            document.getElementById('annotation-container').classList.remove('hidden');
-            document.getElementById('saveButton').classList.remove('hidden');
-            loadSentence(currentIndex);
-        };
-        reader.readAsText(file);
-    }
+    document.addEventListener("DOMContentLoaded", function() {
+        fetch('/load-data')
+            .then(response => response.json())
+            .then(data => {
+                dataframe = data;
+                loadSentence(currentIndex);
+            });
+    });
 
     function loadSentence(index) {
         const data = dataframe[index];
@@ -87,6 +80,7 @@
                 <thead>
                     <tr>
                         <th>Word</th>
+                        <th>LEMMA (Predicted)</th>
                         <th>LEMMA (Corrected)</th>
                         <th>POS</th>
                         <th>NER</th>
@@ -96,9 +90,10 @@
                     ${data.words.map((word, i) => `
                         <tr>
                             <td>${word}</td>
+                            <td>${data.lemmas[i]}</td>
                             <td><input type="text" class="input-field" id="lemma-${i}" value="${data.lemmas[i]}"></td>
-                            <td><input type="text" class="input-field" id="pos-${i}" value="${data.postags[i]}"></td>
-                            <td><input type="text" class="input-field" id="ner-${i}" value="${data.nertags[i]}"></td>
+                            <td><input type="text" class="input-field" id="pos-${i}"></td>
+                            <td><input type="text" class="input-field" id="ner-${i}"></td>
                         </tr>
                     `).join('')}
                 </tbody>
@@ -127,13 +122,17 @@
     }
 
     function saveAnnotations() {
-        const jsonContent = JSON.stringify(annotations, null, 2);
-        const blob = new Blob([jsonContent], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
-        const downloadLink = document.getElementById('downloadLink');
-        downloadLink.href = url;
-        downloadLink.download = 'annotated_data.json';
-        downloadLink.click();
+        fetch('/save-annotations', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(annotations)
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert('Annotations saved successfully!');
+        });
     }
 </script>
 
